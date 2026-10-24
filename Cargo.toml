@@ -1,0 +1,29 @@
+[package]
+name = "n4h"
+version = "0.1.0"
+edition = "2024"
+description = "Not for Human: persistent search references and verifiable edits for coding agents"
+repository = "https://github.com/tomiok/n4h"
+publish = false
+
+[features]
+default = []
+# Test-only process termination points. Do not enable for a normal installation.
+fault-injection = []
+
+[dependencies]
+ast-grep-core = "0.51"
+ast-grep-language = { version = "0.51", default-features = false, features = ["tree-sitter-rust"] }
+blake3 = "1"
+clap = { version = "4", features = ["derive"] }
+fs2 = "0.4"
+ignore = "0.4"
+libc = "0.2"
+regex = "1"
+redb = "4.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+similar = "2"
+tempfile = "3"
+tiktoken-rs = "0.12"
+uuid = { version = "1", features = ["v4"] }
