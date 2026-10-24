@@ -57,7 +57,7 @@ for (const lang of ["en", "es"]) {
   const response = await fetch(`${base}/${lang}`);
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.ok(html.includes(`<html lang="${lang}"`));
+  assert.match(html, new RegExp(`<html\\b[^>]*\\blang="${lang}"`));
   const hero = html.match(/<h1[^>]*>(.*?)<\/h1>/s)?.[1];
   assert.ok(hero?.includes("Not for human."));
   assert.ok(hero?.includes("Built for agents."));
