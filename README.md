@@ -6,6 +6,116 @@ Persistent search references and verifiable text edits for coding agents.
 
 This is an initial Rust MVP, not a semantic refactoring engine. The verified target is Linux. Each plan and operation can edit **up to 50 regular UTF-8 files**, with multiple selected matches per file. Multi-file edits are recoverable, **not atomic across the filesystem**.
 
+## Installation and harness setup
+
+**Publication status:** the installer and release pipeline are prepared in this
+change. The public command below requires publishing `install.sh` to `main` and
+publishing the first release with the matching archive and `SHA256SUMS`.
+Until then, use the source build below. No release is published merely by adding
+these files; the workflow creates a **draft** for maintainer review.
+
+Once published, on **Linux x86-64 with GNU libc >= 2.35**:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/tomiok/n4h/main/install.sh | bash
+```
+
+The installer previews the binary destination (`~/.local/bin/n4h`), asks for
+confirmation, downloads a release, verifies its SHA-256 checksum, and runs
+`n4h setup`. Choose one or several harnesses, then user-wide or current-project
+scope. Choose `--cli-only` to skip skills. Menus read `/dev/tty`, not the stdin
+occupied by a piped script. Bash, curl, tar, sha256sum and standard GNU/Linux
+utilities are required; prebuilt installation does not require Rust or Git.
+macOS, Windows, ARM and musl release artifacts are not provided yet.
+
+For unattended installation, explicitly select the harnesses/scope:
+
+```sh
+installer=$(mktemp)
+curl -fsSL https://raw.githubusercontent.com/tomiok/n4h/main/install.sh \
+  -o "$installer"
+# Inspect this script before executing it.
+bash "$installer" --version v0.1.0 \
+  --harness claude-code,codex,opencode --scope user --yes
+# Or, instead of the preceding installation:
+bash "$installer" --cli-only --yes --bin-dir "$HOME/.local/bin"
+rm -f -- "$installer"
+```
+
+`--yes` requires explicit `--harness` and `--scope`, or `--cli-only`. To replace an
+existing regular binary, additionally pass `--replace-binary`; symlink destinations
+are refused. Binary publication is staged on the same filesystem. If skill setup
+is cancelled or encounters a conflict, the verified binary remains installed and
+the installer reports that setup did not complete. Retry `n4h setup` directly.
+
+Checksums detect corruption; they are fetched from the same trusted GitHub release
+as the binary and are **not an independent signature**. The bootstrap script on
+`main` is mutable, even when `--version` pins the binary. For stricter reproducibility,
+review a script from a trusted commit and use it with a pinned release. No remote
+script should be run without trusting its source.
+
+### Skills, not MCP
+
+After either binary installation method:
+
+```sh
+n4h setup
+n4h setup --harness codex,opencode --scope user --dry-run
+n4h setup --harness codex,opencode --scope user --yes
+n4h setup --harness claude-code --scope project --project /path/to/project --yes
+n4h doctor
+```
+
+The portable skill is embedded in the binary from [`skills/n4h/SKILL.md`](skills/n4h/SKILL.md).
+It teaches the agent to call n4h through the harness's existing terminal tool,
+review plans, retain returned IDs and handle recovery and untrusted notes. It does
+not register an MCP server, force tool usage, or grant terminal permissions.
+Ask the agent explicitly to use the **n4h skill**. In Claude Code use `/n4h`,
+in Codex mention `$n4h`, and in OpenCode V2 mention `@n4h`. Harness policies still apply.
+OpenCode reloads skills automatically; use `/reload` if a forced reload is needed.
+Other harnesses may require a new session to discover a newly installed skill.
+
+| Harness | User scope | Project scope |
+| --- | --- | --- |
+| Claude Code | `~/.claude/skills/n4h/SKILL.md` | `.claude/skills/n4h/SKILL.md` |
+| Codex | `~/.agents/skills/n4h/SKILL.md` | `.agents/skills/n4h/SKILL.md` |
+| OpenCode V2 | `${XDG_CONFIG_HOME:-~/.config}/opencode/skills/n4h/SKILL.md` | `.opencode/skills/n4h/SKILL.md` |
+
+Project scope means **the current directory**, unless `--project` supplies an
+existing directory; it does not guess a repository root. User paths require an
+absolute `HOME`; OpenCode honors an absolute `XDG_CONFIG_HOME` when set. Custom
+harness skill sources/config roots are not auto-detected. Install manually if
+your harness uses a different source. OpenCode also discovers Claude/Agents
+compatibility directories; copies installed by this command are identical, but
+native, project or explicitly configured sources may override the global skill.
+
+Setup checks every destination before writing. Identical files are left alone;
+different existing skills, nonregular files and symlink paths are refused, never
+silently replaced. To upgrade a differing skill, inspect and back up/move your
+existing file explicitly, then rerun setup. Each new skill is published without
+clobbering an existing file. Multiple skill destinations are not one transaction:
+an I/O failure may leave earlier skills installed; rerunning is safe. Paths must
+be controlled by you; this is not protection against a hostile concurrent writer.
+
+`setup` and `doctor` do not need `.n4h`, do not initialize/index projects, and never
+edit `AGENTS.md`, `CLAUDE.md`, harness permission/config files or shell profiles.
+Their stdout is bounded JSON; menus/previews go to the controlling terminal/stderr.
+Token flags are supported; setup preflights its full success receipt before writes.
+
+**PATH:** the installer adds its binary directory only to its own subprocesses.
+It cannot change your parent shell or an already-running harness. Ensure the
+binary directory is on the PATH used by both, then run `n4h doctor` there. It reports
+the running executable, the first executable `n4h` on PATH and whether they match,
+plus skill states (`missing`, `current`, `different`, `unsafe_or_unreadable`).
+Missing skills are normal for unselected harnesses/CLI-only installation. A
+successful doctor command means diagnostics ran, **not** that every integration
+is installed, permitted or used by a model. Project checks cover the current
+directory only, not ancestor/custom discovery sources.
+
+To remove an integration, inspect and remove only the installed n4h skill file(s)
+at the paths above. Remove the binary separately if desired. Do not delete whole
+harness directories or repository `.n4h` state to uninstall the integration.
+
 ## Build
 
 Requires a current stable Rust toolchain and a C compiler for native dependencies. Storage uses **redb**, an embedded database written in Rust; no database server or external `rg` binary is needed.
@@ -21,6 +131,8 @@ Install the normal binary without test features:
 
 ```sh
 cargo install --path . --locked
+n4h setup
+n4h doctor
 ```
 
 Do **not** install with `--all-features`: `fault-injection` enables test-only process termination and simulated I/O failure points controlled by `N4H_TEST_FAILPOINT`. That environment variable has no effect in a normal build.
@@ -363,7 +475,7 @@ n4h recover op_ACTUAL_OPERATION --cursor c_ACTUAL_OBSERVATIONS_CURSOR
 n4h recover op_ACTUAL_OPERATION --rollback
 ```
 
-Without `--rollback`, recovery is inspection-only. Pending operations block new plans, applies and undos; diagnostic searches, inspection, explicit note commands and `resume` remain available. All commands use the same repository lock and fail with `repository_busy` if another n4h process is active.
+Without `--rollback`, recovery is inspection-only. Pending operations block new plans, applies and undos; diagnostic searches, inspection, explicit note commands and `resume` remain available. Repository commands use the same repository lock and fail with `repository_busy` if another n4h process is active. Installation diagnostics and skill setup do not open repository state or take that lock.
 
 Recovery inspects actual file hashes, not just the last journal update. `observations` reports per-file state and `recorded_progress`; follow `cursor_next` with `recover --cursor` if it is paged. Progress can lag a rename after a crash, and older records may report `unknown`; hashes remain authoritative. The `observation` shorthand is retained for single-file operations.
 
@@ -404,7 +516,7 @@ Only after all targets are back at their expected initial hashes is the operatio
 
 Large diffs are paginated without cutting UTF-8 or JSON. Search limits abort without saving an editable handle. A single response unit that cannot fit fails explicitly. Limits are fixed constants in this first release, not configurable flags.
 
-State lives in `.n4h/state.redb`, with a separate lock file. The initialized canonical root is checked on every command: copying/moving `.n4h/` to another root is rejected. Linux creates the state directory with mode `0700` and the DB/lock with mode `0600`.
+State lives in `.n4h/state.redb`, with a separate lock file. The initialized canonical root is checked on every repository command: copying/moving `.n4h/` to another root is rejected. Linux creates the state directory with mode `0700` and the DB/lock with mode `0600`. `setup` and `doctor` bypass repository state entirely.
 
 Metadata remains JSON; before/after snapshots are stored as binary values, not JSON byte arrays. The `meta`, `results`, `plans`, `snapshots`, `operations`, `checkpoint_index`, `source_index`, `pending_operations` and `notes` tables live in one redb database. A transaction updates an operation and its indexes together; repeated source/checkpoint keys are rejected without committing partial records. Status changes and the pending-operation index are also committed together. Note text and memory generation are updated atomically.
 
@@ -444,6 +556,11 @@ AST adds `ast_result_required`, `ast_edit_required`, `unknown_capture` and malfo
 
 Index commands add `index_not_ready`, `invalid_index`, `index_scan_failed` (exit 3), `index_limit_exceeded`, `index_quota_exceeded` (exit 5). I/O or redb failures retain exit 4. A failed build/update does not silently downgrade to a partial snapshot.
 
+Skill setup adds `confirmation_required`/`setup_cancelled` (exit 2), `skill_exists`/
+`unsafe_setup_path` (exit 3), and `setup_write_failed` (exit 4). All destinations
+are checked before writing, but an I/O failure during multiple installs may leave
+earlier destinations installed; inspect the reported paths and retry safely.
+
 Token and byte limits use `output_budget_too_small` (exit 5) for an indivisible response unit. `token_count_unstable` (exit 4) is a fail-closed counting error, never permission to emit an oversized success or write sources without a preflight receipt.
 
 ## Reproducible demo
@@ -480,6 +597,36 @@ The benchmark creates and removes its own temporary fixture, checks live/indexed
 
 Implemented: local state, literal/regex/Rust AST search, opt-in trigram-indexed literal snapshots, incremental/verified index updates with atomic generation publication, persisted captures and structural rewrite templates with output syntax validation, stable match references, byte- and optionally token-bounded result/diff/file-metadata pages, explicit selection, immutable multi-file plans, whole-set conflict and output-receipt preflights, apply/undo, idempotency, per-file journal progress, explicit partial-operation rollback recovery, repository-local agent notes with optimistic revisions, literal memory search and deterministic `resume`. Tests include exact self-inclusive token counts and mutation refusals, failed/interrupted index builds and updates, cache isolation and quotas, snapshot/live match parity, failures on the second source file, rollback failures, process termination between rename and journal, AST recovery and malformed rewrites, atomic note mutations, long-path/large-note pagination and backward compatibility with older redb records.
 
-Not implemented: custom/non-tiktoken tokenizers, automatic model/tokenizer detection or provider billing estimates, indexed regex/AST search, filesystem watcher/daemon, cache compaction, symbol-aware rename/LSP/type-aware refactors, AST support for other languages, embeddings/semantic memory, automatic conversation capture, MCP, model benchmark, telemetry, operational-state retention commands, production cross-platform support or releases. No token-saving percentage is claimed.
+Not implemented: custom/non-tiktoken tokenizers, automatic model/tokenizer detection or provider billing estimates, indexed regex/AST search, filesystem watcher/daemon, cache compaction, symbol-aware rename/LSP/type-aware refactors, AST support for other languages, embeddings/semantic memory, automatic conversation capture, MCP, model benchmark, telemetry, operational-state retention commands or production cross-platform support. A Linux release installer/pipeline is provided; public installation still requires a published release. No token-saving percentage is claimed.
+
+## Preparing a release (maintainers)
+
+1. Review and publish the installer/setup changes. Keep the landing's release
+   status accurate; do not remove its pending notice before the public flow works.
+2. Confirm `Cargo.toml`/`Cargo.lock` package version (currently `0.1.0`) and choose
+   its exact tag (`v0.1.0`). A different version/tag is rejected by packaging.
+3. Run formatting, strict Clippy, all-feature tests, a **normal** release build,
+   and `python3 scripts/test_install.py --binary target/release/n4h`.
+4. On Linux x86-64, `python3 scripts/package_release.py --tag v0.1.0` rebuilds with
+   `--locked --release --no-default-features --target x86_64-unknown-linux-gnu`.
+   It never accepts a supplied test binary. `dist/` contains
+   `n4h-x86_64-unknown-linux-gnu.tar.gz` (binary, README, skill) and `SHA256SUMS`.
+   Local builds use the host's libc; the distributed build must use the workflow's
+   Ubuntu 22.04 runner for the documented GNU libc baseline.
+5. **Only when authorized**, create/push the version tag. The release workflow
+   packages on Ubuntu 22.04, tests the actual archive with mocked network transport,
+   uploads artifacts and creates a **draft** GitHub release. Alternatively dispatch
+   it for an existing matching tag. It requires repository Actions permissions;
+   only the publish job receives `contents: write`. Rerunning cannot overwrite an
+   existing release; inspect/manage a failed draft explicitly.
+6. Review the draft assets/checksums, publish it as a normal release (not merely a
+   draft), then smoke-test pinned and `latest` public downloads in an isolated
+   HOME/project. Only then update EN/ES landing/README publication notices.
+
+The offline tests use a real binary/archive and isolated HOME/XDG/project paths,
+not the developer's actual harness settings. They also exercise `curl | bash`
+through a controlling PTY to verify that menus do not consume script stdin.
+They do not prove that a live model will choose the skill or that GitHub assets
+have been published. Tags, commits and publication are separate maintainer actions.
 
 CI runs formatting, strict Clippy, process-level integration tests (including feature-gated crash tests), and a normal release build on Linux.

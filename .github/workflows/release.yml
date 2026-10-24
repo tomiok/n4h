@@ -1,0 +1,56 @@
+name: Release Linux x86-64
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to package (must match Cargo.toml)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate tag, build normal binary and package
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: python3 scripts/package_release.py --tag "$RELEASE_TAG"
+      - run: cargo test --locked --all-features
+      - name: Test installer against the actual release archive
+        run: python3 scripts/test_install.py --archive dist/n4h-x86_64-unknown-linux-gnu.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-x86-64
+          path: dist/*
+          if-no-files-found: error
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-linux-x86-64
+          path: dist
+      - name: Create a draft release for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: gh release create "$RELEASE_TAG" dist/* --verify-tag --draft --title "n4h $RELEASE_TAG" --notes "Linux x86-64 (GNU libc >= 2.35). Download the archive and SHA256SUMS. See README for installation and skill setup."

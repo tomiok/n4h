@@ -16,6 +16,8 @@ jobs:
       - run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - run: cargo test --locked --all-features
       - run: cargo build --locked --release
+      - run: bash -n install.sh
+      - run: python3 scripts/test_install.py --binary target/release/n4h
       - run: python3 scripts/demo.py --binary target/release/n4h
       - run: python3 scripts/ast_demo.py --binary target/release/n4h --check-rust
       - run: python3 scripts/index_bench.py --binary target/release/n4h --files 16 --bytes-per-file 4096 --runs 2

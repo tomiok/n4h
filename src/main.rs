@@ -10,6 +10,7 @@ mod output;
 mod plan;
 mod resume;
 mod search;
+mod setup;
 mod store;
 mod transaction;
 
@@ -45,6 +46,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Install the portable skill, without initializing or indexing a project.
+    Setup(setup::SetupArgs),
+    /// Inspect the executable, PATH and skill destinations; never modify files.
+    Doctor,
     /// Initialize private local state; does not edit ignore files or agent instructions.
     Init,
     /// Complete a bounded line-based search and persist its match references.
@@ -142,15 +147,20 @@ fn init_response(root: &std::path::Path, repository_id: &str) -> Value {
 
 fn run(cli: Cli, budget: &Budget) -> Result<Value> {
     let cwd = std::env::current_dir()?.canonicalize()?;
-    if matches!(cli.command, Command::Init) {
+    let command = match cli.command {
+        Command::Setup(args) => return setup::run(args, &cwd, budget),
+        Command::Doctor => return setup::doctor(&cwd, budget),
+        command => command,
+    };
+    if matches!(command, Command::Init) {
         let store = Store::init_checked(&cwd, |root, id| {
             budget.finish(init_response(root, id)).map(|_| ())
         })?;
         return budget.finish(init_response(&store.root, &store.repository_id));
     }
     let store = Store::open(&Store::locate(&cwd)?)?;
-    match cli.command {
-        Command::Init => unreachable!(),
+    match command {
+        Command::Init | Command::Setup(_) | Command::Doctor => unreachable!(),
         Command::Find {
             pattern,
             paths,
