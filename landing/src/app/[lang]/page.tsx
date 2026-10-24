@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Demo } from "@/components/demo";
+import { CodeSnippet } from "@/components/code-snippet";
+import { TaskBenchmark } from "@/components/task-benchmark";
 import { Documentation } from "@/components/documentation";
 import {
   ReproducibleExamples,
@@ -11,6 +13,7 @@ import {
   benchmarkMethodologyUrl,
   benchmarks,
   capabilityReferences,
+  installCommand,
   repository,
   sourceLinks,
 } from "@/lib/content";
@@ -135,6 +138,15 @@ export default async function Home({
             <a className="button button-secondary" href={repository}>
               <GithubIcon /> {copy.hero.source}
             </a>
+          </div>
+          <div className="hero-install" aria-label={copy.hero.installTitle}>
+            <CodeSnippet
+              code={installCommand}
+              title={copy.hero.installTitle}
+              copy={copy.docs.clipboard}
+              compact
+            />
+            <p className="hero-install-note">{copy.hero.installNote}</p>
           </div>
           <div className="hero-bottom">
             <a className="hero-provenance" href={sourceLinks.readme}>
@@ -265,11 +277,18 @@ export default async function Home({
             </div>
             <p>{copy.benchmarks.description}</p>
           </div>
+          <TaskBenchmark copy={copy.benchmarks.taskComparison} lang={lang} />
+          <div className="repository-benchmark-heading">
+            <h3>{copy.benchmarks.taskComparison.repositoryExamplesTitle}</h3>
+            <p>
+              {copy.benchmarks.taskComparison.repositoryExamplesDescription}
+            </p>
+          </div>
           <ReproducibleExamples
             copy={copy.technical}
             clipboard={copy.docs.clipboard}
           />
-          {benchmarks.length > 0 ? (
+          {benchmarks.length > 0 && (
             <div className="benchmark-results">
               <div className="table-scroll">
                 <table>
@@ -300,15 +319,6 @@ export default async function Home({
                   {copy.benchmarks.methodology} <Arrow diagonal />
                 </a>
               )}
-            </div>
-          ) : (
-            <div className="results-note">
-              <span className="badge">{copy.benchmarks.pending}</span>
-              <h3>{copy.benchmarks.pendingTitle}</h3>
-              <p>{copy.benchmarks.pendingDescription}</p>
-              <a className="text-link" href={sourceLinks.benchmark}>
-                {copy.benchmarks.repository} <Arrow diagonal />
-              </a>
             </div>
           )}
         </section>

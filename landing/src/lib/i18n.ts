@@ -1,3 +1,6 @@
+import { benchmarkCopy } from "./benchmark-copy";
+import { referenceCopy } from "./reference-copy";
+
 export const locales = ["en", "es"] as const;
 export type Locale = (typeof locales)[number];
 
@@ -23,14 +26,16 @@ const en = {
     tagline: "A CLI for coding agents",
     title: "Not for human.",
     subtitle: "Built for agents.",
-    description:
-      "Persistent search references and verifiable text edits for coding agents. A local Rust CLI with bounded JSON output.",
+    description: "Persistent search and verifiable edits for coding agents.",
     scope:
       "Initial MVP · Verified on Linux · Multi-file edits are recoverable, not atomic.",
     start: "Read the docs",
     source: "View the code",
     bottom: "Technical overview based on the repository README",
     explore: "Command workflow",
+    installTitle: "Install n4h",
+    installNote:
+      "Linux x86-64 · GNU libc ≥ 2.35 · Review the script before running it. The installer asks for confirmation.",
   },
   principles: [
     "Persistent references",
@@ -136,21 +141,25 @@ const en = {
     title: ["Installation", "and command examples."],
     description:
       "Examples adapted from the README. Commands run locally with embedded redb storage; no database server or external rg binary is needed. The web examples do not execute n4h.",
-    requirements: "Release target: Linux x86-64, GNU libc ≥ 2.35 · Bash, curl, tar, sha256sum · Rust + C compiler only for source builds",
+    requirements:
+      "Release target: Linux x86-64, GNU libc ≥ 2.35 · Bash, curl, tar, sha256sum · Rust + C compiler only for source builds",
     steps: {
       install: {
-        title: "One-command installer — release pending",
-        description: "The installer is prepared, but this public command requires publishing install.sh and the first binary release. Until then, use the source fallback below. Once published, it verifies a SHA-256 checksum and offers Claude Code, Codex, OpenCode, or CLI-only installation without sudo.",
+        title: "Install the published binary",
+        description:
+          "Downloads the latest published Linux x86-64 release, verifies its SHA-256 checksum, and offers Claude Code, Codex, OpenCode, or CLI-only installation without sudo. Rust and Git are not required for the prebuilt binary.",
         note: "Review downloaded scripts before executing them. Choose one or more harnesses and user or current-project scope. No shell profiles, permissions, project initialization, or indexing are changed automatically.",
       },
       source: {
         title: "Source fallback for developers",
-        description: "Clone the repository and compile the normal binary with stable Rust and a C compiler. After the installer changes are published, this build also includes setup and doctor.",
+        description:
+          "Alternatively, clone the repository and compile the normal binary with stable Rust and a C compiler. The source build also includes setup and doctor.",
         note: "Do not install with --all-features: it enables test-only fault injection. Cargo installs into its configured bin directory; make sure your harness can find n4h on PATH.",
       },
       setup: {
         title: "Connect your harness and verify",
-        description: "The installer calls setup unless you choose CLI-only. Run it later to add harnesses; select user-wide or project-local skills. Use --dry-run to preview explicit destinations and doctor to inspect PATH and skill files without initializing a project.",
+        description:
+          "The installer calls setup unless you choose CLI-only. Run it later to add harnesses; select user-wide or project-local skills. Use --dry-run to preview explicit destinations and doctor to inspect PATH and skill files without initializing a project.",
         note: "Skills teach the agent to call n4h through its terminal; this is not MCP and does not force usage. Different existing skills are never overwritten. OpenCode may also discover Claude/Codex compatibility copies; native/project skills can take precedence.",
       },
       search: {
@@ -236,23 +245,19 @@ const en = {
   technical: referenceCopy.en,
   benchmarks: {
     eyebrow: "06 — REPRODUCIBILITY",
-    title: ["Demos, checks", "and index benchmark."],
+    title: ["Benchmarks", "and reproducibility."],
     description:
-      "The README provides isolated demo drivers and a synthetic index benchmark. The following commands reproduce them; this page does not execute them.",
-    caption: "n4h benchmark results",
+      "A team-reported task comparison with its outcomes and limitations. Repository demos and the synthetic index benchmark are documented separately below.",
+    taskComparison: benchmarkCopy.en,
+    caption: "Synthetic index benchmark results",
     columns: ["Test", "n4h", "Baseline", "Context"],
     methodology: "View methodology and environment",
-    pending: "NOT PUBLISHED YET",
-    pendingTitle: "No measured results published on this page.",
-    pendingDescription:
-      "The index benchmark measures CLI wall time, build/update time, cache size, and bytes scanned on a synthetic fixture. Peak memory and model tokens are not measured; no general speedup or token-saving percentage is claimed.",
-    repository: "README: reproducible index benchmark",
   },
   footer: {
     tagline: "Not for Human. Built for agents.",
     documentation: "Documentation",
     bottom:
-      "Summary of the repository README · Initial Rust MVP · Verified target: Linux",
+      "Repository documentation + team-reported CLI benchmarks · Initial Linux MVP",
   },
 };
 
@@ -277,13 +282,16 @@ const es: Dictionary = {
     title: "Not for human.",
     subtitle: "Built for agents.",
     description:
-      "Referencias de búsqueda persistentes y ediciones de texto verificables para agentes de código. Una CLI local en Rust con salida JSON acotada.",
+      "Búsquedas persistentes y ediciones verificables para agentes de código.",
     scope:
       "MVP inicial · Verificado en Linux · Ediciones multiarchivo recuperables, no atómicas.",
     start: "Ver documentación",
     source: "Ver el código",
     bottom: "Resumen técnico basado en el README del repositorio",
     explore: "Flujo de comandos",
+    installTitle: "Instalar n4h",
+    installNote:
+      "Linux x86-64 · GNU libc ≥ 2.35 · Revisa el script antes de ejecutarlo. El instalador pide confirmación.",
   },
   principles: [
     "Referencias persistentes",
@@ -393,18 +401,21 @@ const es: Dictionary = {
       "Release: Linux x86-64, GNU libc ≥ 2.35 · Bash, curl, tar, sha256sum · Rust + compilador C solo para compilar desde fuente",
     steps: {
       install: {
-        title: "Instalador de un comando — release pendiente",
-        description: "El instalador está preparado, pero este comando público requiere publicar install.sh y la primera release binaria. Hasta entonces, usa la alternativa desde fuente de abajo. Una vez publicado, verifica SHA-256 y ofrece Claude Code, Codex, OpenCode o solo CLI, sin sudo.",
+        title: "Instala el binario publicado",
+        description:
+          "Descarga la última release publicada para Linux x86-64, verifica su checksum SHA-256 y ofrece Claude Code, Codex, OpenCode o solo CLI, sin sudo. El binario precompilado no requiere Rust ni Git.",
         note: "Revisa los scripts descargados antes de ejecutarlos. Elige uno o varios harnesses y alcance de usuario o del proyecto actual. No cambia perfiles de shell ni permisos, ni inicializa o indexa proyectos automáticamente.",
       },
       source: {
         title: "Alternativa desde fuente para desarrolladores",
-        description: "Clona el repositorio y compila el binario normal con Rust estable y un compilador C. Cuando se publiquen los cambios del instalador, esta compilación incluirá setup y doctor.",
+        description:
+          "Como alternativa, clona el repositorio y compila el binario normal con Rust estable y un compilador C. La compilación desde fuente también incluye setup y doctor.",
         note: "No instales con --all-features: activa la inyección de fallos reservada a pruebas. Cargo instala en su directorio bin configurado; comprueba que tu harness encuentre n4h en PATH.",
       },
       setup: {
         title: "Conecta tu harness y verifica",
-        description: "El instalador llama a setup salvo que elijas solo CLI. Ejecútalo después para añadir harnesses; selecciona skills para tu usuario o para un proyecto. Usa --dry-run para previsualizar destinos explícitos y doctor para revisar PATH y skills sin inicializar un proyecto.",
+        description:
+          "El instalador llama a setup salvo que elijas solo CLI. Ejecútalo después para añadir harnesses; selecciona skills para tu usuario o para un proyecto. Usa --dry-run para previsualizar destinos explícitos y doctor para revisar PATH y skills sin inicializar un proyecto.",
         note: "Las skills enseñan al agente a llamar a n4h desde su terminal; no es MCP ni fuerza su uso. Nunca sobrescribe skills distintas existentes. OpenCode también puede descubrir copias compatibles de Claude/Codex; las skills nativas o del proyecto pueden tener prioridad.",
       },
       search: {
@@ -492,25 +503,20 @@ const es: Dictionary = {
   technical: referenceCopy.es,
   benchmarks: {
     eyebrow: "06 — REPRODUCIBILIDAD",
-    title: ["Demos, comprobaciones", "y benchmark del índice."],
+    title: ["Benchmarks", "y reproducibilidad."],
     description:
-      "El README incluye demos aisladas y un benchmark sintético del índice. Estos comandos permiten reproducirlos; esta página no los ejecuta.",
-    caption: "Resultados de los benchmarks de n4h",
+      "Comparativa de tareas reportada por el equipo, con resultados y limitaciones. Más abajo se documentan por separado las demos y el benchmark sintético del índice.",
+    taskComparison: benchmarkCopy.es,
+    caption: "Resultados del benchmark sintético del índice",
     columns: ["Prueba", "n4h", "Referencia", "Contexto"],
     methodology: "Ver metodología y entorno",
-    pending: "PENDIENTE DE PUBLICACIÓN",
-    pendingTitle: "Esta página aún no publica resultados medidos.",
-    pendingDescription:
-      "El benchmark del índice mide tiempo de la CLI, construcción y actualización, tamaño de caché y bytes examinados en un escenario sintético. No mide memoria máxima ni tokens del modelo; no se afirma una aceleración general ni un porcentaje de ahorro.",
-    repository: "README: benchmark reproducible del índice",
   },
   footer: {
     tagline: "Not for Human. Hecho para agentes.",
     documentation: "Documentación",
     bottom:
-      "Resumen del README del repositorio · MVP inicial en Rust · Plataforma verificada: Linux",
+      "Documentación del repositorio + benchmarks CLI reportados por el equipo · MVP inicial en Linux",
   },
 };
 
 export const dictionaries: Record<Locale, Dictionary> = { en, es };
-import { referenceCopy } from "./reference-copy";

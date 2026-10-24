@@ -65,7 +65,18 @@ for (const lang of ["en", "es"]) {
     assert.ok(html.includes(`id="${section}"`), `Missing section: ${section}`);
   assert.equal((html.match(/class="feature"/g) || []).length, 6);
   assert.equal((html.match(/class="docs-step"/g) || []).length, 9);
-  assert.ok(html.includes(lang === "en" ? "release pending" : "release pendiente"));
+  const heroSection = html.match(
+    /<section[^>]*class="hero container"[^>]*>(.*?)<\/section>/s,
+  )?.[1];
+  assert.ok(
+    heroSection?.includes(
+      "curl -fsSL https://raw.githubusercontent.com/tomiok/n4h/main/install.sh | bash",
+    ),
+    "Installer command must be in the hero",
+  );
+  assert.ok(
+    !html.includes(lang === "en" ? "release pending" : "release pendiente"),
+  );
   for (const command of commands)
     assert.ok(html.includes(command), `Missing documented command: ${command}`);
   for (const driver of drivers) assert.ok(html.includes(`scripts/${driver}`));
@@ -105,8 +116,78 @@ for (const lang of ["en", "es"]) {
   assert.ok(html.includes("output_budget_too_small"));
   assert.ok(html.includes("legacy_state_detected"));
   assert.ok(html.includes('hrefLang="en"') && html.includes('hrefLang="es"'));
+  const expectedBenchmark = {
+    estimatedTokens: [18181, 18086, 132884],
+    toolCalls: [25, 25, 38],
+    defectiveEdits: [1, 1, 0],
+    completed: [10, 10, 7],
+    safeRefusals: [0, 0, 2],
+    incorrectAnswers: [0, 0, 2],
+  };
+  const conditions = ["shell", "ripgrep", "n4h"];
+  for (const [metric, values] of Object.entries(expectedBenchmark)) {
+    const row = html.match(
+      new RegExp(
+        `<tr[^>]*data-benchmark-metric="${metric}"[^>]*>(.*?)<\\/tr>`,
+        "s",
+      ),
+    )?.[1];
+    assert.ok(row, `Missing comparison row: ${metric}`);
+    values.forEach((value, index) =>
+      assert.match(
+        row,
+        new RegExp(
+          `data-condition="${conditions[index]}"\\s+data-value="${value}"`,
+        ),
+      ),
+    );
+  }
+  const timeRow = html.match(
+    /<tr[^>]*data-benchmark-metric="timeMs"[^>]*>(.*?)<\/tr>/s,
+  )?.[1];
+  for (const [index, [median, min, max]] of [
+    [142, 137, 151],
+    [219, 208, 231],
+    [495, 492, 516],
+  ].entries()) {
+    assert.match(
+      timeRow,
+      new RegExp(
+        `data-condition="${conditions[index]}"\\s+data-median="${median}"\\s+data-min="${min}"\\s+data-max="${max}"`,
+      ),
+    );
+  }
+  conditions.forEach((condition, index) => {
+    const outcomes =
+      expectedBenchmark.completed[index] +
+      expectedBenchmark.safeRefusals[index] +
+      expectedBenchmark.incorrectAnswers[index] +
+      expectedBenchmark.defectiveEdits[index];
+    assert.equal(
+      outcomes,
+      11,
+      `Outcome categories must total 11 tasks for ${condition}`,
+    );
+  });
+  assert.ok(html.includes("bytes/4"));
+  assert.ok(html.includes("d65fd47"));
+  assert.ok(
+    html.includes(
+      lang === "en"
+        ? "RESULTS REPORTED BY THE TEAM"
+        : "RESULTADOS REPORTADOS POR EL EQUIPO",
+    ),
+  );
+  assert.ok(html.includes(lang === "en" ? "7.3×" : "7,3 veces"));
+  assert.ok(
+    !html.includes(
+      lang === "en"
+        ? "No measured results published on this page."
+        : "Esta página aún no publica resultados medidos.",
+    ),
+  );
   console.log(
-    `${lang}: technical sections, commands, source anchors, limits, and localization OK`,
+    `${lang}: technical sections, commands, sources, benchmark values/caveats, and localization OK`,
   );
 }
 

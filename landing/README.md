@@ -56,9 +56,13 @@ La prueba verifica ambas rutas, las secciones técnicas, los comandos, los lími
 
 Edita `src/lib/content.ts`:
 
-- Añade resultados reales al array `benchmarks`: nombre (`name: { en, es }`), resultado de n4h, referencia de comparación y contexto (`context: { en, es }`, incluye unidades). Los valores medidos se comparten entre idiomas.
+- `taskBenchmarkReport` contiene la comparativa CLI proporcionada por el equipo: 11 tareas por condición y cinco pasadas con n4h v0.1.0 (`d65fd47`). Los recuentos son por pasada; los tiempos son mediana y rango de las cinco pasadas. Los tokens son una estimación `bytes/4`, no una tokenización exacta ni consumo del modelo. No se volvió a ejecutar esta comparativa para la landing.
+- Los textos bilingües de la comparativa están en `src/lib/benchmark-copy.ts`. Mantén visibles los rechazos seguros, los fallos de cobertura de archivos mayores de 2 MiB y las limitaciones de metodología. No cuentes un rechazo seguro como una tarea completada.
+- Esta comparación es independiente de `scripts/index_bench.py`. Las demos y el benchmark sintético del índice se muestran por separado; sus comandos no reproducen la suite de 11 tareas. Aún no se adjuntaron corpus, entorno, comandos exactos ni archivos de resultados de esa suite.
+
+- Para futuras mediciones del benchmark sintético del índice, añade resultados reales al array `benchmarks`: nombre (`name: { en, es }`), resultado de n4h, referencia de comparación y contexto (`context: { en, es }`, incluye unidades). Los valores medidos se comparten entre idiomas.
 - Añade en `benchmarkMethodologyUrl` el enlace a la metodología, versiones, entorno y escenarios reproducibles.
-- El estado pendiente se sustituye por una tabla automáticamente al añadir resultados.
+- La tabla adicional de mediciones del índice aparece al añadir resultados a `benchmarks`; no sustituye ni se mezcla con la comparación de tareas CLI.
 
 Los bloques de terminal son ejemplos estáticos interactivos; no ejecutan la CLI. Sus identificadores son marcadores de posición. El comando de instalación requiere haber clonado el repositorio.
 

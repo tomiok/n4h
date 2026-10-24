@@ -2,7 +2,8 @@ import type { Locale } from "./i18n";
 
 export const repository = "https://github.com/tomiok/n4h";
 export const documentation = `${repository}#quick-start`;
-export const installCommand = "curl -fsSL https://raw.githubusercontent.com/tomiok/n4h/main/install.sh | bash";
+export const installCommand =
+  "curl -fsSL https://raw.githubusercontent.com/tomiok/n4h/main/install.sh | bash";
 
 export const sourceLinks = {
   readme: `${repository}#readme`,
@@ -98,6 +99,51 @@ export type Benchmark = {
 // Do not use estimates or illustrative numbers in this array.
 export const benchmarks: Benchmark[] = [];
 export const benchmarkMethodologyUrl: string | null = null;
+
+// Team-reported CLI task comparison supplied for the landing.
+// Counts are PER PASS of 11 tasks, not summed across all five repetitions.
+// "Tokens" are a bytes/4 estimate, not a tokenizer/provider measurement.
+export const taskBenchmarkReport = {
+  version: "0.1.0",
+  commit: "d65fd47",
+  repetitions: 5,
+  tasksPerCondition: 11,
+  conditions: [
+    {
+      id: "shell",
+      marker: "A",
+      estimatedTokens: 18181,
+      toolCalls: 25,
+      defectiveEdits: 1,
+      completed: 10,
+      safeRefusals: 0,
+      incorrectAnswers: 0,
+      timeMs: { median: 142, min: 137, max: 151 },
+    },
+    {
+      id: "ripgrep",
+      marker: "B",
+      estimatedTokens: 18086,
+      toolCalls: 25,
+      defectiveEdits: 1,
+      completed: 10,
+      safeRefusals: 0,
+      incorrectAnswers: 0,
+      timeMs: { median: 219, min: 208, max: 231 },
+    },
+    {
+      id: "n4h",
+      marker: "C",
+      estimatedTokens: 132884,
+      toolCalls: 38,
+      defectiveEdits: 0,
+      completed: 7,
+      safeRefusals: 2,
+      incorrectAnswers: 2,
+      timeMs: { median: 495, min: 492, max: 516 },
+    },
+  ],
+} as const;
 
 export const workflow = [
   {
